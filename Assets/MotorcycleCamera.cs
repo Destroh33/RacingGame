@@ -76,7 +76,7 @@ public class MotorcycleCamera : MonoBehaviour
         if (sliding || (speedRatio > 0.85f && physics != null && !physics.IsTucked))
         {
             shakeTimer += Time.deltaTime * shakeFrequency;
-            float shake = Mathf.Sin(shakeTimer) * shakeAmplitude * (sliding ? 1.5f : 0.5f);
+            float shake = Mathf.Sin(shakeTimer) * shakeAmplitude * (sliding ? 0.6f : 0.3f);
             transform.position += transform.up * shake;
         }
         else

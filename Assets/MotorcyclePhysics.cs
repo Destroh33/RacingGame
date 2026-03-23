@@ -204,16 +204,19 @@ public class MotorcyclePhysics : MonoBehaviour
 
         float lateralVelocity = Vector3.Dot(rb.linearVelocity, transform.right);
         float cosLean = Mathf.Cos(CurrentLean * Mathf.Deg2Rad);
-        float grip = maxGrip * Mathf.Lerp(1f, cosLean, gripFalloffWithLean);
+        float totalGrip = maxGrip * Mathf.Lerp(1f, cosLean, gripFalloffWithLean);
 
-        float brakeLoad = (input.FrontBrake + input.RearBrake) * 0.5f;
-        grip *= (1f - brakeLoad * 0.4f);
+        // Traction circle: braking consumes grip budget, leaving less for lateral correction
+        float brakeGripUsed = Mathf.Clamp01(input.FrontBrake * brakeForce / totalGrip);
+        float lateralGripAvailable = totalGrip * (1f - brakeGripUsed);
 
-        float maxLateralForce = grip;
         float desiredCorrectionForce = -lateralVelocity * rb.mass / Time.fixedDeltaTime;
-        float lateralForce = Mathf.Clamp(desiredCorrectionForce, -maxLateralForce, maxLateralForce);
+        float lateralForce = Mathf.Clamp(desiredCorrectionForce, -lateralGripAvailable, lateralGripAvailable);
 
-        IsSliding = Mathf.Abs(lateralVelocity) > slideThreshold;
+        // Sliding when lateral grip can't fully counter lateral velocity
+        IsSliding = Mathf.Abs(lateralVelocity) > slideThreshold &&
+                    Mathf.Abs(desiredCorrectionForce) > lateralGripAvailable;
+
         rb.AddForce(transform.right * lateralForce, ForceMode.Force);
     }
 
