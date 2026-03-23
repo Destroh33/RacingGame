@@ -24,12 +24,13 @@ public class MotorcycleCamera : MonoBehaviour
     public float shakeFrequency  = 12f;
 
     Vector3 currentVelocity;
+    Vector3 smoothedTargetPos;
     float shakeTimer;
 
     void Start()
     {
         if (target == null) return;
-        // Snap to correct position immediately so SmoothDamp doesn't play catch-up
+        smoothedTargetPos = target.position;
         transform.position = target.position - target.forward * followDistance + Vector3.up * cameraHeight;
         transform.LookAt(target.position + Vector3.up * 0.5f);
     }
@@ -46,8 +47,11 @@ public class MotorcycleCamera : MonoBehaviour
         float speedRatio  = Mathf.InverseLerp(0f, maxSpeed, speed);
         float distance    = followDistance + speedRatio * maxSpeedPullback;
 
+        // Smooth the target position to absorb physics timestep jitter
+        smoothedTargetPos = Vector3.Lerp(smoothedTargetPos, target.position, 25f * Time.deltaTime);
+
         // Desired position: behind and above target
-        Vector3 desiredPos = target.position
+        Vector3 desiredPos = smoothedTargetPos
             - target.forward * distance
             + Vector3.up * cameraHeight;
 

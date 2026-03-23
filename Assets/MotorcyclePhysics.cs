@@ -28,6 +28,7 @@ public class MotorcyclePhysics : MonoBehaviour
     public float highSpeedMaxLean    = 55f;
     public float maxTurnTorque       = 6f;
     public float steeringDamping     = 2.5f;
+    public float yawCounterStrength  = 5f;
 
     [Header("Suspension")]
     public float suspensionRestLength = 0.4f;
@@ -188,6 +189,13 @@ public class MotorcyclePhysics : MonoBehaviour
         float effectiveSpeedFactor = Mathf.Max(speedFactor, 0.3f * floorFade);
         float turnTorque = (CurrentLean / effectiveMaxLean) * maxTurnTorque * effectiveSpeedFactor;
         rb.AddRelativeTorque(Vector3.up * turnTorque, ForceMode.Acceleration);
+
+        // When lean input is released, actively counter the yaw so the bike stops turning quickly
+        if (Mathf.Approximately(input.Lean, 0f))
+        {
+            float yawRate = Vector3.Dot(rb.angularVelocity, transform.up);
+            rb.AddRelativeTorque(Vector3.up * -yawRate * yawCounterStrength, ForceMode.Acceleration);
+        }
     }
 
     void ApplyGrip()
