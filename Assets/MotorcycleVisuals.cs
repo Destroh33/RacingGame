@@ -20,9 +20,10 @@ public class MotorcycleVisuals : MonoBehaviour
     public TrailRenderer frontSkidTrail;
     public TrailRenderer rearSkidTrail;
 
-    [Header("Speed Lines (optional)")]
-    public ParticleSystem speedLines;
-    public float          speedLinesThreshold = 0.7f;  // fraction of maxSpeed
+    [Header("Speed Lines")]
+    public ParticleSystem speedTrail;
+    public float          speedTrailMinSpeed = 25f;
+    public float          speedTrailMaxSpeed = 40f;
 
     float frontWheelRot;
     float rearWheelRot;
@@ -86,11 +87,25 @@ public class MotorcycleVisuals : MonoBehaviour
 
     void HandleSpeedLines()
     {
-        if (speedLines == null || physics == null) return;
+        if (speedTrail == null) return;
 
-        float speedRatio = Mathf.Abs(physics.CurrentSpeed) / physics.maxSpeed;
-        bool  show       = !physics.IsCrashed && speedRatio > speedLinesThreshold;
+        float speed = Mathf.Abs(physics.CurrentSpeed);
+        float t     = Mathf.InverseLerp(speedTrailMinSpeed, speedTrailMaxSpeed, speed);
 
-        SetParticles(speedLines, show);
+        if (physics.IsCrashed || t <= 0f)
+        {
+            SetParticles(speedTrail, false);
+            return;
+        }
+
+        SetParticles(speedTrail, true);
+
+        var main            = speedTrail.main;
+        Color c             = main.startColor.color;
+        c.a                 = Mathf.Lerp(0.5f, 1f, t);
+        main.startColor     = c;
+
+        var emission            = speedTrail.emission;
+        emission.rateOverTime   = Mathf.Lerp(10f, 25f, t);
     }
 }

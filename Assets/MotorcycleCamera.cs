@@ -20,8 +20,10 @@ public class MotorcycleCamera : MonoBehaviour
     public float cameraLeanFactor = 0.3f;
 
     [Header("Shake")]
-    public float shakeAmplitude  = 0.08f;
-    public float shakeFrequency  = 12f;
+    public float shakeAmplitude    = 0.05f;
+    public float shakeFrequency    = 14f;
+    public float shakeMinSpeed     = 25f;
+    public float shakeMaxSpeed     = 40f;
 
     [Header("Crash")]
     public float crashRiseHeight  = 6f;   // how high camera pulls up after crash
@@ -31,6 +33,8 @@ public class MotorcycleCamera : MonoBehaviour
     Vector3 smoothedTargetPos;
     Vector3 crashCameraTarget;
     float   shakeTimer;
+    Vector3 shakeOffset;
+    float   shakeOffsetTimer;
 
     void Start()
     {
@@ -75,16 +79,27 @@ public class MotorcycleCamera : MonoBehaviour
 
         transform.rotation = Quaternion.Slerp(transform.rotation, desiredRot, rotationSmooth * Time.deltaTime);
 
-        if (sliding || speedRatio > 0.85f)
+        float shakeT = Mathf.InverseLerp(shakeMinSpeed, shakeMaxSpeed, speed);
+        if (shakeT > 0f)
         {
-            shakeTimer += Time.deltaTime * shakeFrequency;
-            float shake = Mathf.Sin(shakeTimer) * shakeAmplitude * (sliding ? 0.6f : 0.3f);
-            transform.position += transform.up * shake;
+            // Pick a new random target offset at shakeFrequency Hz
+            shakeOffsetTimer += Time.deltaTime * shakeFrequency;
+            if (shakeOffsetTimer >= 1f)
+            {
+                shakeOffsetTimer = 0f;
+                shakeOffset = Random.insideUnitSphere * shakeAmplitude * shakeT;
+                shakeOffset.z = 0f; // no forward/back — only up/sideways
+            }
         }
         else
         {
-            shakeTimer = 0f;
+            shakeOffset = Vector3.zero;
+            shakeOffsetTimer = 0f;
         }
+
+        // Always lerp back toward zero so it never feels stuck
+        shakeOffset = Vector3.Lerp(shakeOffset, Vector3.zero, shakeFrequency * Time.deltaTime);
+        transform.position += transform.TransformDirection(shakeOffset);
     }
 
     void UpdateCrashCamera()
