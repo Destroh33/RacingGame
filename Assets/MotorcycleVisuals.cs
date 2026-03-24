@@ -46,10 +46,10 @@ public class MotorcycleVisuals : MonoBehaviour
         rearWheelRot  += degreesPerSecond * Time.deltaTime;
 
         if (frontWheelMesh != null)
-            frontWheelMesh.localRotation = Quaternion.Euler(frontWheelRot, 0f, 0f);
+            frontWheelMesh.localRotation = Quaternion.Euler(0f, 0f, -frontWheelRot);
 
         if (rearWheelMesh != null)
-            rearWheelMesh.localRotation = Quaternion.Euler(rearWheelRot, 0f, 0f);
+            rearWheelMesh.localRotation = Quaternion.Euler(0f, 0f, -rearWheelRot);
     }
 
     void HandleSmoke()
