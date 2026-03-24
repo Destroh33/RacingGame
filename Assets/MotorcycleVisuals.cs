@@ -27,6 +27,8 @@ public class MotorcycleVisuals : MonoBehaviour
     float frontWheelRot;
     float rearWheelRot;
 
+    bool cachedCrash = false;
+    public GameObject crashParticles;
     void Update()
     {
         if (physics == null) return;
@@ -54,13 +56,12 @@ public class MotorcycleVisuals : MonoBehaviour
 
     void HandleSmoke()
     {
-        bool showSmoke = physics.IsSliding || (input != null && input.RearBrake > smokeSlideThreshold);
-
-        SetParticles(rearTireSmoke, showSmoke);
-
-        // Front smoke only on heavy front braking
-        bool frontSmoke = input != null && input.FrontBrake > 0.8f && physics.IsGrounded;
-        SetParticles(frontTireSmoke, frontSmoke);
+        if(physics.IsCrashed && !cachedCrash)
+            Instantiate(crashParticles, this.gameObject.transform.position, this.gameObject.transform.rotation);
+        cachedCrash = physics.IsCrashed;
+        bool skidding = !physics.IsCrashed && physics.IsSliding;
+        SetParticles(rearTireSmoke,  skidding);
+        SetParticles(frontTireSmoke, skidding);
     }
 
     void SetParticles(ParticleSystem ps, bool active)
@@ -72,8 +73,9 @@ public class MotorcycleVisuals : MonoBehaviour
 
     void HandleSkidMarks()
     {
-        SetTrail(rearSkidTrail,  physics.IsSliding);
-        SetTrail(frontSkidTrail, input != null && input.FrontBrake > 0.8f);
+        bool skidding = !physics.IsCrashed && physics.IsSliding;
+        SetTrail(rearSkidTrail,  skidding);
+        SetTrail(frontSkidTrail, skidding);
     }
 
     void SetTrail(TrailRenderer trail, bool active)
@@ -87,7 +89,7 @@ public class MotorcycleVisuals : MonoBehaviour
         if (speedLines == null || physics == null) return;
 
         float speedRatio = Mathf.Abs(physics.CurrentSpeed) / physics.maxSpeed;
-        bool  show       = speedRatio > speedLinesThreshold;
+        bool  show       = !physics.IsCrashed && speedRatio > speedLinesThreshold;
 
         SetParticles(speedLines, show);
     }
