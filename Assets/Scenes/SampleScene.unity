@@ -926,8 +926,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 0.4188765, y: 0.8272276, z: 2.0953429}
-  m_Center: {x: 0.0054174066, y: 0.80746317, z: -0.7518544}
+  m_Size: {x: 0.4188765, y: 0.5584936, z: 2.0953429}
+  m_Center: {x: 0.0054174066, y: 0.94183016, z: -0.7518544}
 --- !u!4 &408624488 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5913994173251401219, guid: 7d510ea86dec2fd4fa49210a9a91dcae, type: 3}
@@ -4597,6 +4597,7 @@ MonoBehaviour:
   physics: {fileID: 2141035885}
   input: {fileID: 2141035886}
   crashSpeedThreshold: 5
+  box: {fileID: 369465427}
 --- !u!1 &2143461194
 GameObject:
   m_ObjectHideFlags: 0
