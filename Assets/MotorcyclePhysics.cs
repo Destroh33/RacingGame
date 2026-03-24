@@ -45,10 +45,6 @@ public class MotorcyclePhysics : MonoBehaviour
 
     [Header("Drag")]
     public float dragNormal           = 0.8f;
-    public float dragTucked           = 0.4f;
-
-    [Header("Hang Off")]
-    public float hangOffLeanReduction = 0.75f;  // multiplier on lean needed for same turn
 
     [Header("Reset")]
     public Vector3 resetOffset        = new Vector3(0f, 1f, 0f);
@@ -58,7 +54,6 @@ public class MotorcyclePhysics : MonoBehaviour
     public float CurrentSpeed   { get; private set; }
     public bool  IsGrounded     { get; private set; }
     public bool  IsSliding      { get; private set; }
-    public bool  IsTucked       => input != null && input.Tuck;
 
     Rigidbody rb;
     float prevFrontCompression;
@@ -139,7 +134,7 @@ public class MotorcyclePhysics : MonoBehaviour
 
     void ApplyDrag()
     {
-        rb.linearDamping = input.Tuck ? dragTucked : dragNormal;
+        rb.linearDamping = dragNormal;
     }
 
     void ApplyThrottle()
@@ -174,12 +169,7 @@ public class MotorcyclePhysics : MonoBehaviour
         float effectiveLeanRate  = Mathf.Lerp(lowSpeedLeanRate, highSpeedLeanRate, speedFactor);
         float effectiveMaxLean   = Mathf.Lerp(lowSpeedMaxLean,  highSpeedMaxLean,  speedFactor);
 
-        // Hang off allows same turn with less lean
-        float leanInput = input.Lean;
-        if (input.HangOff)
-            leanInput *= hangOffLeanReduction;
-
-        float targetLean = leanInput * effectiveMaxLean;
+        float targetLean = input.Lean * effectiveMaxLean;
         float rate = Mathf.Abs(targetLean) > Mathf.Abs(CurrentLean) ? effectiveLeanRate : leanReturnSpeed;
         CurrentLean = Mathf.Lerp(CurrentLean, targetLean, rate * Time.fixedDeltaTime);
 
@@ -242,6 +232,7 @@ public class MotorcyclePhysics : MonoBehaviour
         GUILayout.Label($"Front  compression: {debugFrontCompression:F3}  force: {debugFrontForce:F0} N");
         GUILayout.Label($"Rear   compression: {debugRearCompression:F3}  force: {debugRearForce:F0} N");
         GUILayout.Label($"Grounded: {IsGrounded}   Speed: {CurrentSpeed:F1} m/s");
+        if (IsSliding) GUILayout.Label("SKIDDING");
         GUILayout.Label($"Mass: {(rb != null ? rb.mass : 0f):F0} kg   Need: {(rb != null ? rb.mass * Mathf.Abs(Physics.gravity.y) : 0f):F0} N total");
         GUILayout.EndArea();
     }

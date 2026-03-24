@@ -87,7 +87,7 @@ public class MotorcycleVisuals : MonoBehaviour
         if (speedLines == null || physics == null) return;
 
         float speedRatio = Mathf.Abs(physics.CurrentSpeed) / physics.maxSpeed;
-        bool  show       = speedRatio > speedLinesThreshold && physics.IsTucked;
+        bool  show       = speedRatio > speedLinesThreshold;
 
         SetParticles(speedLines, show);
     }

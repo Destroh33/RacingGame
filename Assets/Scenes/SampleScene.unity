@@ -2211,12 +2211,10 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 64
-  maxGrip: 6000
+  maxGrip: 4000
   gripFalloffWithLean: 0.6
   slideThreshold: 0.65
   dragNormal: 0.8
-  dragTucked: 0.4
-  hangOffLeanReduction: 0.75
   resetOffset: {x: 0, y: 1, z: 0}
 --- !u!114 &2141035886
 MonoBehaviour:

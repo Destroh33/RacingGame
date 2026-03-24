@@ -73,7 +73,7 @@ public class MotorcycleCamera : MonoBehaviour
             rotationSmooth * Time.deltaTime);
 
         // Shake on slide or high speed over bumps
-        if (sliding || (speedRatio > 0.85f && physics != null && !physics.IsTucked))
+        if (sliding || speedRatio > 0.85f)
         {
             shakeTimer += Time.deltaTime * shakeFrequency;
             float shake = Mathf.Sin(shakeTimer) * shakeAmplitude * (sliding ? 0.6f : 0.3f);
