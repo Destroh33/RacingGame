@@ -46,6 +46,10 @@ public class MotorcyclePhysics : MonoBehaviour
     [Header("Drag")]
     public float dragNormal           = 0.8f;
 
+    [Header("Air & Landing")]
+    public float airSelfRightTorque  = 5f;   // pulls bike level in air (unused, reserved)
+    public float airControlTorque    = 2f;   // A/D steers in air for landing orientation
+
     [Header("Reset")]
     public Vector3 resetOffset        = new Vector3(0f, 1f, 0f);
 
@@ -60,6 +64,9 @@ public class MotorcyclePhysics : MonoBehaviour
     float prevRearCompression;
     Vector3 resetPosition;
     Quaternion resetRotation;
+    Vector3 frontGroundNormal = Vector3.up;
+    Vector3 rearGroundNormal  = Vector3.up;
+    float currentVisualPitch;
 
     // Debug readout — remove once suspension is tuned
     float debugFrontCompression, debugFrontForce;
@@ -69,7 +76,7 @@ public class MotorcyclePhysics : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.centerOfMass = new Vector3(0f, -0.1f, 0f);
-        // Lean and pitch are cosmetic — keep the rigidbody upright
+        // Keep rigidbody fully upright — pitch and lean are visual only
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         rb.angularDamping = steeringDamping;
         resetPosition = transform.position;
@@ -90,30 +97,41 @@ public class MotorcyclePhysics : MonoBehaviour
 
         SuspensionAndGround();
         ApplyDrag();
-        ApplyThrottle();
-        ApplyBraking();
-        ApplyLeanSteering();
-        ApplyGrip();
+
+        if (IsGrounded)
+        {
+            ApplyThrottle();
+            ApplyBraking();
+            ApplyLeanSteering();
+            ApplyGrip();
+        }
+        else
+        {
+            ApplyAirPhysics();
+        }
+
         UpdateVisualLean();
     }
 
     void SuspensionAndGround()
     {
-        bool frontHit = SuspensionRay(frontWheelPos, ref prevFrontCompression, out debugFrontCompression, out debugFrontForce);
-        bool rearHit  = SuspensionRay(rearWheelPos,  ref prevRearCompression,  out debugRearCompression,  out debugRearForce);
+        bool frontHit = SuspensionRay(frontWheelPos, ref prevFrontCompression, out debugFrontCompression, out debugFrontForce, out frontGroundNormal);
+        bool rearHit  = SuspensionRay(rearWheelPos,  ref prevRearCompression,  out debugRearCompression,  out debugRearForce,  out rearGroundNormal);
         IsGrounded = frontHit || rearHit;
     }
 
-    bool SuspensionRay(Transform origin, ref float prevCompression, out float outCompression, out float outForce)
+    bool SuspensionRay(Transform origin, ref float prevCompression, out float outCompression, out float outForce, out Vector3 outNormal)
     {
         outCompression = 0f;
         outForce       = 0f;
+        outNormal      = Vector3.up;
         if (origin == null) return false;
 
         float rayLength = suspensionRestLength + suspensionTravel + wheelRadius;
         bool didHit = Physics.Raycast(origin.position, -transform.up, out RaycastHit hit, rayLength, groundMask, QueryTriggerInteraction.Ignore);
 
         if (!didHit) return false;
+        outNormal = hit.normal;
 
         float compression = 1f - ((hit.distance - wheelRadius) / suspensionRestLength);
         compression = Mathf.Clamp01(compression);
@@ -132,9 +150,15 @@ public class MotorcyclePhysics : MonoBehaviour
         return true;
     }
 
+    void ApplyAirPhysics()
+    {
+        // A/D steers yaw in air so you can orient for landing
+        rb.AddRelativeTorque(Vector3.up * (input.Lean * airControlTorque), ForceMode.Acceleration);
+    }
+
     void ApplyDrag()
     {
-        rb.linearDamping = dragNormal;
+        rb.linearDamping = IsGrounded ? dragNormal : 0.05f;
     }
 
     void ApplyThrottle()
@@ -176,8 +200,8 @@ public class MotorcyclePhysics : MonoBehaviour
         // Yaw torque from lean — actually rotates the bike to face a new direction
         // Floor fades in from 0→1 over the first 5 m/s so you can't turn at standstill
         float floorFade = Mathf.InverseLerp(0f, 5f, Mathf.Abs(CurrentSpeed));
-        float effectiveSpeedFactor = Mathf.Max(speedFactor, 0.3f * floorFade);
-        float turnTorque = (CurrentLean / effectiveMaxLean) * maxTurnTorque * effectiveSpeedFactor;
+        float effectiveSpeedFactor = Mathf.Max(1f - speedFactor * 0.5f, 0.3f * floorFade);
+        float turnTorque = (CurrentLean / effectiveMaxLean) * maxTurnTorque * effectiveSpeedFactor * Mathf.Sign(CurrentSpeed);
         rb.AddRelativeTorque(Vector3.up * turnTorque, ForceMode.Acceleration);
 
         // When lean input is released, actively counter the yaw so the bike stops turning quickly
@@ -213,7 +237,21 @@ public class MotorcyclePhysics : MonoBehaviour
     void UpdateVisualLean()
     {
         if (bikeModel == null) return;
-        bikeModel.localRotation = Quaternion.Euler(0f, 0f, -CurrentLean);
+
+        float targetPitch = 0f;
+        if (IsGrounded)
+        {
+            // Average front/rear normals to get slope angle
+            Vector3 avgNormal = (frontGroundNormal + rearGroundNormal).normalized;
+            // Project onto forward axis to get pitch angle
+            targetPitch = Vector3.SignedAngle(Vector3.up, avgNormal, transform.right);
+        }
+
+        // In air lerp slowly back to level; on ground snap to slope
+        float pitchLerpSpeed = IsGrounded ? 15f : 3f;
+        currentVisualPitch = Mathf.Lerp(currentVisualPitch, targetPitch, pitchLerpSpeed * Time.fixedDeltaTime);
+
+        bikeModel.localRotation = Quaternion.Euler(currentVisualPitch, 0f, -CurrentLean);
     }
 
     void Reset()
