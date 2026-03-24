@@ -958,8 +958,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 0.4188765, y: 0.5584936, z: 2.0953429}
-  m_Center: {x: 0.0054174066, y: 0.94183016, z: -0.7518544}
+  m_Size: {x: 0.4188765, y: 0.44224548, z: 2.0953429}
+  m_Center: {x: 0.0054174066, y: 0.9999542, z: -0.7518544}
 --- !u!4 &408624488 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5913994173251401219, guid: 7d510ea86dec2fd4fa49210a9a91dcae, type: 3}
@@ -4257,7 +4257,7 @@ MonoBehaviour:
   frontWheelPos: {fileID: 798593789}
   rearWheelPos: {fileID: 833168184}
   bikeCollider: {fileID: 369465427}
-  maxSpeed: 50
+  maxSpeed: 60
   accelerationForce: 3000
   brakeForce: 4000
   reverseForce: 1500
@@ -4274,13 +4274,13 @@ MonoBehaviour:
   yawCounterStrength: 10
   suspensionRestLength: 0.4
   suspensionTravel: 0.2
-  springStrength: 18000
-  dampStrength: 1200
+  springStrength: 20000
+  dampStrength: 2000
   wheelRadius: 0
   groundMask:
     serializedVersion: 2
     m_Bits: 64
-  maxGrip: 7500
+  maxGrip: 8000
   gripFalloffWithLean: 0.6
   slideThreshold: 0.65
   dragNormal: 0.25
