@@ -8,6 +8,7 @@ public class MotorcyclePhysics : MonoBehaviour
     public Transform bikeModel;          // Visual model — rotated for lean
     public Transform frontWheelPos;      // Suspension raycast origin
     public Transform rearWheelPos;
+    public Collider bikeCollider;
 
     [Header("Speed")]
     public float maxSpeed            = 80f;
@@ -58,6 +59,9 @@ public class MotorcyclePhysics : MonoBehaviour
     public float CurrentSpeed   { get; private set; }
     public bool  IsGrounded     { get; private set; }
     public bool  IsSliding      { get; private set; }
+    public bool  IsCrashed      { get; private set; }
+
+    public event System.Action<Vector3> OnCrash;
 
     Rigidbody rb;
     float prevFrontCompression;
@@ -66,6 +70,9 @@ public class MotorcyclePhysics : MonoBehaviour
     Quaternion resetRotation;
     Vector3 frontGroundNormal = Vector3.up;
     Vector3 rearGroundNormal  = Vector3.up;
+    Vector3    savedCoM;
+    Vector3    savedInertia;
+    Quaternion savedInertiaRot;
     float currentVisualPitch;
 
     // Debug readout — remove once suspension is tuned
@@ -75,7 +82,23 @@ public class MotorcyclePhysics : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.centerOfMass = new Vector3(0f, -0.1f, 0f);
+
+        // Capture auto CoM and inertia tensor before collider is active, then lock both
+        rb.automaticCenterOfMass  = true;
+        rb.automaticInertiaTensor = true;
+        Vector3 naturalCoM       = rb.centerOfMass;
+        Vector3 naturalInertia   = rb.inertiaTensor;
+        Quaternion naturalRot    = rb.inertiaTensorRotation;
+        savedCoM         = naturalCoM;
+        savedInertia     = naturalInertia;
+        savedInertiaRot  = naturalRot;
+        rb.automaticCenterOfMass  = false;
+        rb.automaticInertiaTensor = false;
+        rb.centerOfMass           = savedCoM;
+        rb.inertiaTensor          = savedInertia;
+        rb.inertiaTensorRotation  = savedInertiaRot;
+        if (bikeCollider != null) bikeCollider.enabled = true;
+
         // Keep rigidbody fully upright — pitch and lean are visual only
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         rb.angularDamping = steeringDamping;
@@ -86,6 +109,13 @@ public class MotorcyclePhysics : MonoBehaviour
     void FixedUpdate()
     {
         if (input == null) return;
+
+        if (IsCrashed)
+        {
+            CurrentLean = Mathf.Lerp(CurrentLean, 0f, 5f * Time.fixedDeltaTime);
+            UpdateVisualLean();
+            return;
+        }
 
         if (input.ResetBike)
         {
@@ -194,13 +224,15 @@ public class MotorcyclePhysics : MonoBehaviour
         float effectiveMaxLean   = Mathf.Lerp(lowSpeedMaxLean,  highSpeedMaxLean,  speedFactor);
 
         float targetLean = input.Lean * effectiveMaxLean;
-        float rate = Mathf.Abs(targetLean) > Mathf.Abs(CurrentLean) ? effectiveLeanRate : leanReturnSpeed;
+        float lowSpeedBoost = Mathf.InverseLerp(5f, 0f, Mathf.Abs(CurrentSpeed));
+        float effectiveLeanReturn = Mathf.Lerp(leanReturnSpeed, leanReturnSpeed * 5f, lowSpeedBoost);
+        float rate = Mathf.Abs(targetLean) > Mathf.Abs(CurrentLean) ? effectiveLeanRate : effectiveLeanReturn;
         CurrentLean = Mathf.Lerp(CurrentLean, targetLean, rate * Time.fixedDeltaTime);
 
         // Yaw torque from lean — actually rotates the bike to face a new direction
         // Floor fades in from 0→1 over the first 5 m/s so you can't turn at standstill
-        float floorFade = Mathf.InverseLerp(0f, 5f, Mathf.Abs(CurrentSpeed));
-        float effectiveSpeedFactor = Mathf.Max(1f - speedFactor * 0.5f, 0.3f * floorFade);
+        float floorFade = Mathf.InverseLerp(3f, 8f, Mathf.Abs(CurrentSpeed));
+        float effectiveSpeedFactor = (1f - speedFactor * 0.5f) * floorFade;
         float turnTorque = (CurrentLean / effectiveMaxLean) * maxTurnTorque * effectiveSpeedFactor * Mathf.Sign(CurrentSpeed);
         rb.AddRelativeTorque(Vector3.up * turnTorque, ForceMode.Acceleration);
 
@@ -254,8 +286,17 @@ public class MotorcyclePhysics : MonoBehaviour
         bikeModel.localRotation = Quaternion.Euler(currentVisualPitch, 0f, -CurrentLean);
     }
 
-    void Reset()
+    public void Reset()
     {
+        IsCrashed = false;
+        rb.constraints            = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        rb.linearDamping          = dragNormal;
+        rb.angularDamping         = steeringDamping;
+        rb.automaticCenterOfMass  = false;
+        rb.automaticInertiaTensor = false;
+        rb.centerOfMass           = savedCoM;
+        rb.inertiaTensor          = savedInertia;
+        rb.inertiaTensorRotation  = savedInertiaRot;
         rb.linearVelocity  = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         transform.SetPositionAndRotation(resetPosition + resetOffset, resetRotation);
@@ -277,6 +318,11 @@ public class MotorcyclePhysics : MonoBehaviour
 
     void OnDrawGizmos()
     {
+        if (rb != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.TransformPoint(rb.centerOfMass), 0.5f);
+        }
         DrawSuspensionGizmo(frontWheelPos);
         DrawSuspensionGizmo(rearWheelPos);
     }
@@ -311,6 +357,17 @@ public class MotorcyclePhysics : MonoBehaviour
     }
 
     // Called by MotorcycleVisuals or external code to update reset point
+    public void TriggerCrash(Vector3 impactVelocity)
+    {
+        IsCrashed = true;
+        rb.constraints            = RigidbodyConstraints.None;
+        rb.linearDamping          = 0.2f;
+        rb.angularDamping         = 0.5f;
+        rb.automaticCenterOfMass  = true;
+        rb.automaticInertiaTensor = true;
+        OnCrash?.Invoke(impactVelocity);
+    }
+
     public void SetResetPoint(Vector3 pos, Quaternion rot)
     {
         resetPosition = pos;

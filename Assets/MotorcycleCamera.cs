@@ -3,7 +3,7 @@ using UnityEngine;
 public class MotorcycleCamera : MonoBehaviour
 {
     [Header("References")]
-    public Transform target;              // The bike transform
+    public Transform target;
     public MotorcyclePhysics physics;
 
     [Header("Follow")]
@@ -13,19 +13,24 @@ public class MotorcycleCamera : MonoBehaviour
     public float rotationSmooth  = 6f;
 
     [Header("Speed Pull-back")]
-    public float maxSpeedPullback = 3f;   // Extra distance added at max speed
+    public float maxSpeedPullback = 3f;
     public float maxSpeed         = 80f;
 
     [Header("Lean")]
-    public float cameraLeanFactor = 0.3f; // How much camera rolls with the bike (0–1)
+    public float cameraLeanFactor = 0.3f;
 
     [Header("Shake")]
     public float shakeAmplitude  = 0.08f;
     public float shakeFrequency  = 12f;
 
+    [Header("Crash")]
+    public float crashRiseHeight  = 6f;   // how high camera pulls up after crash
+    public float crashRiseSpeed   = 2f;
+
     Vector3 currentVelocity;
     Vector3 smoothedTargetPos;
-    float shakeTimer;
+    Vector3 crashCameraTarget;
+    float   shakeTimer;
 
     void Start()
     {
@@ -39,40 +44,37 @@ public class MotorcycleCamera : MonoBehaviour
     {
         if (target == null) return;
 
-        float speed      = physics != null ? Mathf.Abs(physics.CurrentSpeed) : 0f;
-        float lean       = physics != null ? physics.CurrentLean : 0f;
-        bool  sliding    = physics != null && physics.IsSliding;
+        bool crashed = physics != null && physics.IsCrashed;
 
-        // Distance scales with speed
-        float speedRatio  = Mathf.InverseLerp(0f, maxSpeed, speed);
-        float distance    = followDistance + speedRatio * maxSpeedPullback;
+        if (crashed)
+        {
+            UpdateCrashCamera();
+            return;
+        }
 
-        // Smooth the target position to absorb physics timestep jitter
+        float speed   = physics != null ? Mathf.Abs(physics.CurrentSpeed) : 0f;
+        float lean    = physics != null ? physics.CurrentLean : 0f;
+        bool  sliding = physics != null && physics.IsSliding;
+
+        float speedRatio = Mathf.InverseLerp(0f, maxSpeed, speed);
+        float distance   = followDistance + speedRatio * maxSpeedPullback;
+
         smoothedTargetPos = Vector3.Lerp(smoothedTargetPos, target.position, 25f * Time.deltaTime);
 
-        // Desired position: behind and above target
         Vector3 desiredPos = smoothedTargetPos
             - target.forward * distance
             + Vector3.up * cameraHeight;
 
-        // Smooth position
         transform.position = Vector3.SmoothDamp(
             transform.position, desiredPos, ref currentVelocity,
             1f / positionSmooth, Mathf.Infinity, Time.deltaTime);
 
-        // Look at target
-        Quaternion lookRot = Quaternion.LookRotation(
-            (target.position + Vector3.up * 0.5f) - transform.position);
-
-        // Lean roll
-        Quaternion leanRot = Quaternion.Euler(0f, 0f, -lean * cameraLeanFactor);
+        Quaternion lookRot  = Quaternion.LookRotation((target.position + Vector3.up * 0.5f) - transform.position);
+        Quaternion leanRot  = Quaternion.Euler(0f, 0f, -lean * cameraLeanFactor);
         Quaternion desiredRot = lookRot * leanRot;
 
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation, desiredRot,
-            rotationSmooth * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRot, rotationSmooth * Time.deltaTime);
 
-        // Shake on slide or high speed over bumps
         if (sliding || speedRatio > 0.85f)
         {
             shakeTimer += Time.deltaTime * shakeFrequency;
@@ -83,5 +85,25 @@ public class MotorcycleCamera : MonoBehaviour
         {
             shakeTimer = 0f;
         }
+    }
+
+    void UpdateCrashCamera()
+    {
+        // On first crash frame, lock the aerial target position
+        if (crashCameraTarget == Vector3.zero)
+            crashCameraTarget = transform.position + Vector3.up * crashRiseHeight;
+
+        // Drift up to the crash target
+        transform.position = Vector3.Lerp(transform.position, crashCameraTarget, crashRiseSpeed * Time.deltaTime);
+
+        // Look at crash site, lerp lean back to level
+        Quaternion lookRot   = Quaternion.LookRotation((target.position + Vector3.up * 0.5f) - transform.position);
+        Quaternion levelRot  = Quaternion.Euler(lookRot.eulerAngles.x, lookRot.eulerAngles.y, 0f);
+        transform.rotation   = Quaternion.Slerp(transform.rotation, levelRot, 3f * Time.deltaTime);
+    }
+
+    void OnEnable()
+    {
+        crashCameraTarget = Vector3.zero;
     }
 }
