@@ -9450,7 +9450,7 @@ MonoBehaviour:
   frontSkidTrail: {fileID: 0}
   rearSkidTrail: {fileID: 0}
   speedTrail: {fileID: 664363234}
-  speedTrailMinSpeed: 35
+  speedTrailMinSpeed: 30
   speedTrailMaxSpeed: 40
   crashParticles: {fileID: 104829970813648393, guid: d3015b7eea383f64d8b81f965cc466e7, type: 3}
 --- !u!114 &2141035890
