@@ -94,11 +94,13 @@ public class MotorcycleVisuals : MonoBehaviour
 
         if (physics.IsCrashed || t <= 0f)
         {
-            SetParticles(speedTrail, false);
+            if (speedTrail != null && speedTrail.gameObject.activeSelf)
+                speedTrail.gameObject.SetActive(false);
             return;
         }
 
-        SetParticles(speedTrail, true);
+        if (!speedTrail.gameObject.activeSelf)
+            speedTrail.gameObject.SetActive(true);
 
         var main            = speedTrail.main;
         Color c             = main.startColor.color;
