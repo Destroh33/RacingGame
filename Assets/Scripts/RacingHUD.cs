@@ -23,11 +23,13 @@ public class RacingHUD : MonoBehaviour
     public TextMeshProUGUI finishTimeText;
     public TextMeshProUGUI finishDeltaText;
 
-    // Cached at the moment the finish event fires (before bests update)
-    bool  finishCached;
-    float cachedFinishSplit;
-    float cachedFinishDelta;
-    bool  finishHadPrevBest;
+    // Per-sector cache — captured when event fires, before bests update
+    readonly float[] cachedSplits      = new float[3];
+    readonly float[] cachedDeltas      = new float[3];
+    readonly bool[]  sectorCrossed     = new bool[3];
+    readonly bool[]  sectorHadPrevBest = new bool[3];
+
+    LapTimer.State prevLapState;
 
     static readonly string Green = "#00DD66";
     static readonly string Red   = "#FF3333";
@@ -48,6 +50,18 @@ public class RacingHUD : MonoBehaviour
 
     void Update()
     {
+        if (lapTimer == null) return;
+
+        // New run started — clear cached sector data
+        if (lapTimer.CurrentState == LapTimer.State.Running && prevLapState == LapTimer.State.Idle)
+        {
+            System.Array.Clear(sectorCrossed,     0, 3);
+            System.Array.Clear(cachedSplits,      0, 3);
+            System.Array.Clear(cachedDeltas,      0, 3);
+            System.Array.Clear(sectorHadPrevBest, 0, 3);
+        }
+        prevLapState = lapTimer.CurrentState;
+
         UpdateSpeed();
         UpdateTimer();
         UpdateSectors();
@@ -66,7 +80,7 @@ public class RacingHUD : MonoBehaviour
 
     void UpdateTimer()
     {
-        if (timerText == null || lapTimer == null) return;
+        if (timerText == null) return;
 
         switch (lapTimer.CurrentState)
         {
@@ -85,48 +99,23 @@ public class RacingHUD : MonoBehaviour
 
     void UpdateSectors()
     {
-        if (lapTimer == null) return;
-
         UpdateSectorRow(sector1Text, 0, "S1");
         UpdateSectorRow(sector2Text, 1, "S2");
-
-        if (lapTimer.CurrentState == LapTimer.State.Finished && finishCached)
-            UpdateFinishedFINRow();
-        else
-            UpdateSectorRow(sector3Text, 2, "FIN");
-    }
-
-    void UpdateFinishedFINRow()
-    {
-        if (sector3Text == null) return;
-        string timeStr = LapTimer.FormatTime(cachedFinishSplit);
-        if (finishHadPrevBest)
-        {
-            string col       = cachedFinishDelta <= 0f ? Green : Red;
-            sector3Text.text = $"FIN  {timeStr}  <color={col}>{LapTimer.FormatDelta(cachedFinishDelta)}</color>";
-        }
-        else
-        {
-            sector3Text.text = $"FIN  {timeStr}";
-        }
+        UpdateSectorRow(sector3Text, 2, "FIN");
     }
 
     void UpdateSectorRow(TextMeshProUGUI text, int s, string label)
     {
-        if (text == null || lapTimer == null) return;
+        if (text == null) return;
 
-        bool running  = lapTimer.CurrentState != LapTimer.State.Idle;
-        bool crossed  = running && lapTimer.CurrentSplits[s] > 0f;
-
-        if (crossed)
+        if (sectorCrossed[s])
         {
-            string timeStr = LapTimer.FormatTime(lapTimer.CurrentSplits[s]);
-
-            if (lapTimer.BestSplitsSet[s])
+            // Always show the cached value — never recalculate so bests updating can't change it
+            string timeStr = LapTimer.FormatTime(cachedSplits[s]);
+            if (sectorHadPrevBest[s])
             {
-                float  d   = lapTimer.CurrentSplits[s] - lapTimer.BestSplits[s];
-                string col = d <= 0f ? Green : Red;
-                text.text  = $"{label}  {timeStr}  <color={col}>{LapTimer.FormatDelta(d)}</color>";
+                string col = cachedDeltas[s] <= 0f ? Green : Red;
+                text.text  = $"{label}  {timeStr}  <color={col}>{LapTimer.FormatDelta(cachedDeltas[s])}</color>";
             }
             else
             {
@@ -135,6 +124,7 @@ public class RacingHUD : MonoBehaviour
         }
         else if (lapTimer.BestSplitsSet[s])
         {
+            // Not yet crossed — show best as dim reference, highlight the active sector
             string dim = lapTimer.CurrentState == LapTimer.State.Running && s == lapTimer.NextSector
                 ? "FFFFFF" : "AAAAAA";
             text.text = $"<color=#{dim}>{label}  {LapTimer.FormatTime(lapTimer.BestSplits[s])}</color>";
@@ -145,18 +135,18 @@ public class RacingHUD : MonoBehaviour
         }
     }
 
+    // ── Events ───────────────────────────────────────────────────────────────
+
     void HandleSectorComplete(int sector, float split, float delta)
     {
-        if (sector == 2)
-        {
-            // Capture before bests update
-            finishCached      = true;
-            cachedFinishSplit = split;
-            cachedFinishDelta = delta;
-            finishHadPrevBest = lapTimer.BestSplitsSet[2];
+        // Capture before LapTimer updates bests
+        cachedSplits[sector]      = split;
+        cachedDeltas[sector]      = delta;
+        sectorCrossed[sector]     = true;
+        sectorHadPrevBest[sector] = lapTimer.BestSplitsSet[sector];
 
+        if (sector == 2)
             ShowFinishScreen(split, delta);
-        }
     }
 
     void ShowFinishScreen(float split, float delta)
@@ -187,5 +177,4 @@ public class RacingHUD : MonoBehaviour
             }
         }
     }
-
 }

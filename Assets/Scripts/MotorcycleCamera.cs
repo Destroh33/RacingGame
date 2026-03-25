@@ -39,8 +39,10 @@ public class MotorcycleCamera : MonoBehaviour
     public float  speedFxMax     = 40f;
 
     [Header("Crash")]
-    public float crashRiseHeight  = 6f;
-    public float crashRiseSpeed   = 2f;
+    public float crashRiseHeight      = 6f;
+    public float crashRiseSpeed       = 2f;
+    public float crashVignetteTarget  = 0.4f;
+    public float crashVignetteSpeed   = 3f;
 
     Camera     cam;
     MotionBlur motionBlur;
@@ -127,7 +129,16 @@ public class MotorcycleCamera : MonoBehaviour
 
         if (crashed)
         {
-            ApplySpeedFx(0f);
+            // Reset FOV and blur, lerp vignette to crash intensity
+            if (cam != null)
+                cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, fovBase, fovSmooth * Time.deltaTime);
+            if (postProcessVolume != null && postProcessVolume.isActiveAndEnabled)
+            {
+                if (motionBlur != null)
+                    motionBlur.intensity.value = Mathf.Lerp(motionBlur.intensity.value, 0f, fovSmooth * Time.deltaTime);
+                if (vignette != null)
+                    vignette.intensity.value = Mathf.Lerp(vignette.intensity.value, crashVignetteTarget, crashVignetteSpeed * Time.deltaTime);
+            }
             UpdateCrashCamera();
             return;
         }
