@@ -137,7 +137,6 @@ public class BikeCollisionDetector : MonoBehaviour
                 contactCooldowns.Remove(key);
         }
 
-        if (!physics.IsCrashed) return;
         if (input == null || !input.ResetBike) return;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }

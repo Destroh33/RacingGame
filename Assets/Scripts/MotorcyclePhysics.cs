@@ -117,11 +117,6 @@ public class MotorcyclePhysics : MonoBehaviour
             return;
         }
 
-        if (input.ResetBike)
-        {
-            Reset();
-            return;
-        }
 
         CurrentSpeed = Vector3.Dot(rb.linearVelocity, transform.forward);
 
@@ -304,17 +299,6 @@ public class MotorcyclePhysics : MonoBehaviour
         if (bikeModel != null) bikeModel.localRotation = Quaternion.identity;
     }
 
-    void OnGUI()
-    {
-        GUILayout.BeginArea(new Rect(10, 10, 260, 110));
-        GUI.color = Color.black;
-        GUILayout.Label($"Front  compression: {debugFrontCompression:F3}  force: {debugFrontForce:F0} N");
-        GUILayout.Label($"Rear   compression: {debugRearCompression:F3}  force: {debugRearForce:F0} N");
-        GUILayout.Label($"Grounded: {IsGrounded}   Speed: {CurrentSpeed:F1} m/s");
-        if (IsSliding) GUILayout.Label("SKIDDING");
-        GUILayout.Label($"Mass: {(rb != null ? rb.mass : 0f):F0} kg   Need: {(rb != null ? rb.mass * Mathf.Abs(Physics.gravity.y) : 0f):F0} N total");
-        GUILayout.EndArea();
-    }
 
     void OnDrawGizmos()
     {
