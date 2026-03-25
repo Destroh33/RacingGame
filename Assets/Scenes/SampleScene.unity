@@ -1439,9 +1439,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MotorcycleCamera
   target: {fileID: 543450651592555138}
   physics: {fileID: 2141035885}
-  followDistance: 6
+  followDistance: 5
   cameraHeight: 2
-  positionSmooth: 15
+  positionSmooth: 10
   rotationSmooth: 10
   maxSpeedPullback: 3
   maxSpeed: 80
@@ -1461,6 +1461,8 @@ MonoBehaviour:
   speedFxMax: 40
   crashRiseHeight: 6
   crashRiseSpeed: 2
+  crashVignetteTarget: 0.4
+  crashVignetteSpeed: 3
 --- !u!4 &332694758 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6103405735755283812, guid: 3679911e4ea36fa40a9d13fe6979bc8f, type: 3}
