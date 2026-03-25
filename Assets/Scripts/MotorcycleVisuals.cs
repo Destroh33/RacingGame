@@ -60,7 +60,7 @@ public class MotorcycleVisuals : MonoBehaviour
         if(physics.IsCrashed && !cachedCrash)
             Instantiate(crashParticles, this.gameObject.transform.position, this.gameObject.transform.rotation);
         cachedCrash = physics.IsCrashed;
-        bool skidding = !physics.IsCrashed && physics.IsSliding;
+        bool skidding = !physics.IsCrashed && physics.IsSliding && physics.IsGrounded;
         SetParticles(rearTireSmoke,  skidding);
         SetParticles(frontTireSmoke, skidding);
     }
@@ -74,7 +74,7 @@ public class MotorcycleVisuals : MonoBehaviour
 
     void HandleSkidMarks()
     {
-        bool skidding = !physics.IsCrashed && physics.IsSliding;
+        bool skidding = !physics.IsCrashed && physics.IsSliding && physics.IsGrounded;
         SetTrail(rearSkidTrail,  skidding);
         SetTrail(frontSkidTrail, skidding);
     }
@@ -82,7 +82,7 @@ public class MotorcycleVisuals : MonoBehaviour
     void SetTrail(TrailRenderer trail, bool active)
     {
         if (trail == null) return;
-        trail.emitting = active && physics.IsGrounded;
+        trail.emitting = active;
     }
 
     void HandleSpeedLines()

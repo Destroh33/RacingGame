@@ -104,7 +104,7 @@ public class MotorcycleEngineAudio : MonoBehaviour
         engineSource.volume = Mathf.Lerp(engineSource.volume, Mathf.Lerp(minVolume, maxVolume, speedT), volumeSmooth * Time.deltaTime);
 
         // Screech — fades in while skidding
-        float screechTarget  = physics.IsSliding ? screechMaxVolume : 0f;
+        float screechTarget  = physics.IsSliding && physics.IsGrounded ? screechMaxVolume : 0f;
         screechSource.volume = Mathf.Lerp(screechSource.volume, screechTarget, screechFadeSpeed * Time.deltaTime);
 
         // Wind — fades in above windMinSpeed
