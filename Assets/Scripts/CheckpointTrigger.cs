@@ -10,6 +10,6 @@ public class CheckpointTrigger : MonoBehaviour
     {
         if (lapTimer == null) return;
         if (other.GetComponentInParent<MotorcyclePhysics>() != null)
-            lapTimer.OnCheckpointHit(sectorIndex);
+            lapTimer.OnCheckpointHit(sectorIndex, transform.position);
     }
 }

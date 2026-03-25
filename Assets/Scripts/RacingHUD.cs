@@ -18,11 +18,16 @@ public class RacingHUD : MonoBehaviour
     public TextMeshProUGUI sector2Text;
     public TextMeshProUGUI sector3Text;
 
-    [Header("Delta Flash")]
-    public TextMeshProUGUI deltaText;
-    public float           deltaDisplayDuration = 3f;
+    [Header("Finish Screen")]
+    public GameObject      finishPanel;
+    public TextMeshProUGUI finishTimeText;
+    public TextMeshProUGUI finishDeltaText;
 
-    float deltaTimer;
+    // Cached at the moment the finish event fires (before bests update)
+    bool  finishCached;
+    float cachedFinishSplit;
+    float cachedFinishDelta;
+    bool  finishHadPrevBest;
 
     static readonly string Green = "#00DD66";
     static readonly string Red   = "#FF3333";
@@ -31,6 +36,8 @@ public class RacingHUD : MonoBehaviour
     {
         if (lapTimer != null)
             lapTimer.OnSectorComplete += HandleSectorComplete;
+        if (finishPanel != null)
+            finishPanel.SetActive(false);
     }
 
     void OnDisable()
@@ -44,7 +51,6 @@ public class RacingHUD : MonoBehaviour
         UpdateSpeed();
         UpdateTimer();
         UpdateSectors();
-        TickDeltaFlash();
     }
 
     // ── Speed ────────────────────────────────────────────────────────────────
@@ -65,9 +71,7 @@ public class RacingHUD : MonoBehaviour
         switch (lapTimer.CurrentState)
         {
             case LapTimer.State.Idle:
-                timerText.text = lapTimer.BestSplitsSet[2]
-                    ? $"Best  {LapTimer.FormatTime(lapTimer.BestSplits[2])}"
-                    : "--:--.---";
+                timerText.text = "--:--.---";
                 break;
 
             case LapTimer.State.Running:
@@ -81,9 +85,30 @@ public class RacingHUD : MonoBehaviour
 
     void UpdateSectors()
     {
+        if (lapTimer == null) return;
+
         UpdateSectorRow(sector1Text, 0, "S1");
         UpdateSectorRow(sector2Text, 1, "S2");
-        UpdateSectorRow(sector3Text, 2, "FIN");
+
+        if (lapTimer.CurrentState == LapTimer.State.Finished && finishCached)
+            UpdateFinishedFINRow();
+        else
+            UpdateSectorRow(sector3Text, 2, "FIN");
+    }
+
+    void UpdateFinishedFINRow()
+    {
+        if (sector3Text == null) return;
+        string timeStr = LapTimer.FormatTime(cachedFinishSplit);
+        if (finishHadPrevBest)
+        {
+            string col       = cachedFinishDelta <= 0f ? Green : Red;
+            sector3Text.text = $"FIN  {timeStr}  <color={col}>{LapTimer.FormatDelta(cachedFinishDelta)}</color>";
+        }
+        else
+        {
+            sector3Text.text = $"FIN  {timeStr}";
+        }
     }
 
     void UpdateSectorRow(TextMeshProUGUI text, int s, string label)
@@ -95,14 +120,13 @@ public class RacingHUD : MonoBehaviour
 
         if (crossed)
         {
-            // Show this run's split and delta vs best
             string timeStr = LapTimer.FormatTime(lapTimer.CurrentSplits[s]);
 
             if (lapTimer.BestSplitsSet[s])
             {
-                float  d     = lapTimer.CurrentSplits[s] - lapTimer.BestSplits[s];
-                string col   = d <= 0f ? Green : Red;
-                text.text    = $"{label}  {timeStr}  <color={col}>{LapTimer.FormatDelta(d)}</color>";
+                float  d   = lapTimer.CurrentSplits[s] - lapTimer.BestSplits[s];
+                string col = d <= 0f ? Green : Red;
+                text.text  = $"{label}  {timeStr}  <color={col}>{LapTimer.FormatDelta(d)}</color>";
             }
             else
             {
@@ -111,50 +135,57 @@ public class RacingHUD : MonoBehaviour
         }
         else if (lapTimer.BestSplitsSet[s])
         {
-            // Waiting to cross — show best as reference
             string dim = lapTimer.CurrentState == LapTimer.State.Running && s == lapTimer.NextSector
-                ? "FFFFFF" : "888888";
+                ? "FFFFFF" : "AAAAAA";
             text.text = $"<color=#{dim}>{label}  {LapTimer.FormatTime(lapTimer.BestSplits[s])}</color>";
         }
         else
         {
-            text.text = $"<color=#555555>{label}  --:--.---</color>";
+            text.text = $"<color=#AAAAAA>{label}  --:--.---</color>";
         }
     }
-
-    // ── Delta flash ──────────────────────────────────────────────────────────
 
     void HandleSectorComplete(int sector, float split, float delta)
     {
-        if (deltaText == null) return;
-
-        string label = sector == 2 ? "FINISH" : $"SECTOR {sector + 1}";
-
-        if (lapTimer.BestSplitsSet[sector] && sector < 2)
+        if (sector == 2)
         {
-            // Comparing against previous best (bests update only on finish)
-            string col    = delta <= 0f ? Green : Red;
-            deltaText.text = $"{label}\n{LapTimer.FormatTime(split)}\n<color={col}>{LapTimer.FormatDelta(delta)}</color>";
-        }
-        else if (sector == 2 && lapTimer.BestSplitsSet[2])
-        {
-            string col    = delta <= 0f ? Green : Red;
-            deltaText.text = $"{label}\n{LapTimer.FormatTime(split)}\n<color={col}>{LapTimer.FormatDelta(delta)}</color>";
-        }
-        else
-        {
-            deltaText.text = $"{label}\n{LapTimer.FormatTime(split)}";
-        }
+            // Capture before bests update
+            finishCached      = true;
+            cachedFinishSplit = split;
+            cachedFinishDelta = delta;
+            finishHadPrevBest = lapTimer.BestSplitsSet[2];
 
-        deltaText.alpha = 1f;
-        deltaTimer      = deltaDisplayDuration;
+            ShowFinishScreen(split, delta);
+        }
     }
 
-    void TickDeltaFlash()
+    void ShowFinishScreen(float split, float delta)
     {
-        if (deltaText == null || deltaTimer <= 0f) return;
-        deltaTimer     -= Time.deltaTime;
-        deltaText.alpha = deltaTimer < 0.5f ? deltaTimer / 0.5f : 1f;
-        if (deltaTimer <= 0f) deltaText.alpha = 0f;
+        if (finishPanel == null) return;
+
+        finishPanel.SetActive(true);
+
+        // Top: previous best (bests haven't updated yet when this fires)
+        if (finishTimeText != null)
+        {
+            finishTimeText.text = lapTimer.BestSplitsSet[2]
+                ? $"Old Best:  {LapTimer.FormatTime(lapTimer.BestSplits[2])}"
+                : "Old Best:  --:--.---";
+        }
+
+        // Bottom: this run's time colored green/red if there was a previous best
+        if (finishDeltaText != null)
+        {
+            if (lapTimer.BestSplitsSet[2])
+            {
+                string col           = delta <= 0f ? Green : Red;
+                finishDeltaText.text = $"This Run:  <color={col}>{LapTimer.FormatTime(split)}</color>";
+            }
+            else
+            {
+                finishDeltaText.text = $"This Run:  {LapTimer.FormatTime(split)}";
+            }
+        }
     }
+
 }

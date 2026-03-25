@@ -60,6 +60,7 @@ public class MotorcyclePhysics : MonoBehaviour
     public bool  IsGrounded     { get; private set; }
     public bool  IsSliding      { get; private set; }
     public bool  IsCrashed      { get; private set; }
+    public bool  IsFinished     { get; private set; }
 
     public event System.Action<Vector3> OnCrash;
 
@@ -117,11 +118,21 @@ public class MotorcyclePhysics : MonoBehaviour
             return;
         }
 
-
         CurrentSpeed = Vector3.Dot(rb.linearVelocity, transform.forward);
 
         SuspensionAndGround();
         ApplyDrag();
+
+        if (IsFinished)
+        {
+            if (IsGrounded)
+            {
+                ApplyFinishControl();
+                ApplyGrip();
+            }
+            UpdateVisualLean();
+            return;
+        }
 
         if (IsGrounded)
         {
@@ -350,6 +361,46 @@ public class MotorcyclePhysics : MonoBehaviour
         rb.automaticCenterOfMass  = true;
         rb.automaticInertiaTensor = true;
         OnCrash?.Invoke(impactVelocity);
+    }
+
+    Vector3 finishTarget;
+
+    public void TriggerFinish(Vector3 targetPosition)
+    {
+        IsFinished  = true;
+        finishTarget = targetPosition;
+    }
+
+    void ApplyFinishControl()
+    {
+        // Full braking
+        if (Mathf.Abs(CurrentSpeed) > 0.1f)
+            rb.AddForce(-transform.forward * Mathf.Sign(CurrentSpeed) * brakeForce, ForceMode.Force);
+
+        float speedKph  = Mathf.Abs(CurrentSpeed) * 3.6f;
+        bool  nearStop  = speedKph <= 1.5f;
+
+        // Below 1.5 kph straighten out, otherwise steer toward finish target
+        float targetLean;
+        if (nearStop)
+        {
+            targetLean = 0f;
+        }
+        else
+        {
+            Vector3 toTarget   = Vector3.ProjectOnPlane(finishTarget - transform.position, Vector3.up).normalized;
+            float   lateralDot = Vector3.Dot(transform.right, toTarget);
+            targetLean = Mathf.Clamp(lateralDot * maxLeanAngle, -maxLeanAngle, maxLeanAngle);
+        }
+
+        CurrentLean = Mathf.Lerp(CurrentLean, targetLean, leanSpeed * Time.fixedDeltaTime);
+
+        float speedFactor = Mathf.InverseLerp(0f, maxSpeed, Mathf.Abs(CurrentSpeed));
+        float floorFade   = Mathf.InverseLerp(3f, 8f, Mathf.Abs(CurrentSpeed));
+        float turnTorque  = (CurrentLean / maxLeanAngle) * maxTurnTorque
+                            * (1f - speedFactor * 0.5f) * floorFade
+                            * Mathf.Sign(CurrentSpeed);
+        rb.AddRelativeTorque(Vector3.up * turnTorque, ForceMode.Acceleration);
     }
 
     public void SetResetPoint(Vector3 pos, Quaternion rot)

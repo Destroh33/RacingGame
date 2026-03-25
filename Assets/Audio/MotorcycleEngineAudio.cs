@@ -88,6 +88,9 @@ public class MotorcycleEngineAudio : MonoBehaviour
             return;
         }
 
+        if (!engineSource.isPlaying)
+            engineSource.Play();
+
         float speed    = Mathf.Abs(physics.CurrentSpeed);
         float speedT   = Mathf.InverseLerp(0f, maxSpeed, speed);
         float throttle = input != null ? input.Throttle : 0f;

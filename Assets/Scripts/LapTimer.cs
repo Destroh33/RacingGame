@@ -38,8 +38,8 @@ public class LapTimer : MonoBehaviour
             return;
         }
 
-        // Start new run from Idle or Finished on first grounded input
-        if (CurrentState != State.Running)
+        // Start new run from Idle on first grounded input (not while finished)
+        if (CurrentState == State.Idle)
         {
             bool anyInput = input.Throttle > 0.05f || input.FrontBrake > 0.05f || input.RearBrake > 0.05f;
             if (physics.IsGrounded && anyInput && !physics.IsCrashed)
@@ -55,7 +55,7 @@ public class LapTimer : MonoBehaviour
         System.Array.Clear(currentSplits, 0, 3);
     }
 
-    public void OnCheckpointHit(int sectorIndex)
+    public void OnCheckpointHit(int sectorIndex, Vector3 position)
     {
         if (CurrentState != State.Running) return;
         if (sectorIndex != nextSector) return;   // must hit in order
@@ -81,6 +81,7 @@ public class LapTimer : MonoBehaviour
                 }
             }
             CurrentState = State.Finished;
+            physics.TriggerFinish(position);
         }
         else
         {
