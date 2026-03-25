@@ -122,16 +122,25 @@ public class RacingHUD : MonoBehaviour
                 text.text = $"{label}  {timeStr}";
             }
         }
-        else if (lapTimer.BestSplitsSet[s])
-        {
-            // Not yet crossed — show best as dim reference, highlight the active sector
-            string dim = lapTimer.CurrentState == LapTimer.State.Running && s == lapTimer.NextSector
-                ? "FFFFFF" : "AAAAAA";
-            text.text = $"<color=#{dim}>{label}  {LapTimer.FormatTime(lapTimer.BestSplits[s])}</color>";
-        }
         else
         {
-            text.text = $"<color=#AAAAAA>{label}  --:--.---</color>";
+            bool isActive = lapTimer.CurrentState == LapTimer.State.Running && s == lapTimer.NextSector;
+            if (isActive)
+            {
+                // Currently racing this sector — yellow
+                string timeStr = lapTimer.BestSplitsSet[s]
+                    ? LapTimer.FormatTime(lapTimer.BestSplits[s])
+                    : "--:--.---";
+                text.text = $"<color=#FFD700>{label}  {timeStr}</color>";
+            }
+            else if (lapTimer.BestSplitsSet[s])
+            {
+                text.text = $"<color=#AAAAAA>{label}  {LapTimer.FormatTime(lapTimer.BestSplits[s])}</color>";
+            }
+            else
+            {
+                text.text = $"<color=#AAAAAA>{label}  --:--.---</color>";
+            }
         }
     }
 
