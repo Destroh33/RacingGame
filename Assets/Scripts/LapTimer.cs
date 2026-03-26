@@ -55,10 +55,10 @@ public class LapTimer : MonoBehaviour
         System.Array.Clear(currentSplits, 0, 3);
     }
 
-    public void OnCheckpointHit(int sectorIndex, Vector3 position)
+    public bool OnCheckpointHit(int sectorIndex, Vector3 position)
     {
-        if (CurrentState != State.Running) return;
-        if (sectorIndex != nextSector) return;   // must hit in order
+        if (CurrentState != State.Running) return false;
+        if (sectorIndex != nextSector) return false;   // must hit in order
 
         float split = Time.time - runStartTime;
         currentSplits[sectorIndex] = split;
@@ -87,6 +87,7 @@ public class LapTimer : MonoBehaviour
         {
             nextSector++;
         }
+        return true;
     }
 
     public static string FormatTime(float t)

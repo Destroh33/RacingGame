@@ -6,10 +6,16 @@ public class CheckpointTrigger : MonoBehaviour
     public int      sectorIndex;
     public LapTimer lapTimer;
 
+    [SerializeField] AudioSource source;
+    [SerializeField] AudioClip clip;
     void OnTriggerEnter(Collider other)
     {
         if (lapTimer == null) return;
+        bool b = false;
         if (other.GetComponentInParent<MotorcyclePhysics>() != null)
-            lapTimer.OnCheckpointHit(sectorIndex, transform.position);
+            b = lapTimer.OnCheckpointHit(sectorIndex, transform.position);
+
+        if(b)
+            source.PlayOneShot(clip);
     }
 }
