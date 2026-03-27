@@ -88,7 +88,8 @@ public class BikeCollisionDetector : MonoBehaviour
             if (impulse < minImpulse) continue;
 
             contactCooldowns[contactID] = Time.time;
-            PlayCrashSound(impulse);
+            if (col.gameObject.tag!="Player")
+                PlayCrashSound(impulse);
         }
     }
 
