@@ -73,7 +73,8 @@ public class RacingHUD : MonoBehaviour
     {
         if (speedText == null || physics == null) return;
         float kmh = Mathf.Abs(physics.CurrentSpeed) * 3.6f;
-        speedText.text = $"{kmh:0} <size=60%>km/h</size>";
+        if (kmh < 1f) kmh = 0f;
+        speedText.text = $"{Mathf.FloorToInt(kmh)} <size=60%>km/h</size>";
     }
 
     // ── Timer ────────────────────────────────────────────────────────────────

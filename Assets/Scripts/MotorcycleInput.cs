@@ -27,8 +27,13 @@ public class MotorcycleInput : MonoBehaviour
     InputAction frontBrakeAction;
     InputAction resetAction;
 
+    [Header("Startup")]
+    public float inputDelay = 1f;
+    float startTime;
+
     void Awake()
     {
+        startTime = Time.time;
         var map = actions.FindActionMap("Motorcycle", throwIfNotFound: true);
 
         throttleAction   = map.FindAction("Throttle",   throwIfNotFound: true);
@@ -47,6 +52,13 @@ public class MotorcycleInput : MonoBehaviour
 
     void Update()
     {
+        if (Time.time - startTime < inputDelay)
+        {
+            Throttle = FrontBrake = RearBrake = Lean = 0f;
+            ResetBike = false;
+            return;
+        }
+
         float rawThrottle   = throttleAction.ReadValue<float>();
         float rawRearBrake  = rearBrakeAction.ReadValue<float>();
         float rawLean       = leanAction.ReadValue<float>();

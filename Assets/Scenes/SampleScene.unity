@@ -25147,6 +25147,7 @@ MonoBehaviour:
   leanRampDown: 2
   frontBrakeRamp: 2
   rearBrakeRamp: 4
+  inputDelay: 0.3
 --- !u!54 &2141035887
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -25404,7 +25405,7 @@ Transform:
   m_GameObject: {fileID: 919132147939319864}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 13, y: -9.075, z: 77.7}
+  m_LocalPosition: {x: 13, y: -9.25, z: 77.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

@@ -12,6 +12,7 @@ public class LapTimer : MonoBehaviour
     // Static so best times survive scene reloads within the same session
     static float[] s_bestSplits    = new float[3];
     static bool[]  s_bestSplitsSet = new bool[3];
+    static float   s_bestLapTime   = float.MaxValue;
 
     float[] currentSplits   = new float[3];
     float   runStartTime;
@@ -71,10 +72,11 @@ public class LapTimer : MonoBehaviour
 
         if (sectorIndex == 2)
         {
-            // Update bests with this completed run
-            for (int i = 0; i < 3; i++)
+            // Only update sector bests if this is a new best overall lap
+            if (split < s_bestLapTime)
             {
-                if (!s_bestSplitsSet[i] || currentSplits[i] < s_bestSplits[i])
+                s_bestLapTime = split;
+                for (int i = 0; i < 3; i++)
                 {
                     s_bestSplits[i]    = currentSplits[i];
                     s_bestSplitsSet[i] = true;
