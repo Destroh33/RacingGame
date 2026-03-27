@@ -10,6 +10,7 @@ public class RiderLean : MonoBehaviour
     public float leanSpeed = 4f;
 
     float currentLean;
+    public float CurrentLean => currentLean;
 
     void Update()
     {

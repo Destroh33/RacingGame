@@ -31,8 +31,8 @@ public class LapTimer : MonoBehaviour
     {
         if (physics == null || input == null) return;
 
-        // Invalidate run on crash or manual reset
-        if (CurrentState == State.Running && (physics.IsCrashed || input.ResetBike))
+        // Invalidate run on crash or manual reset (also allow restarting from Finished)
+        if ((CurrentState == State.Running || CurrentState == State.Finished) && (physics.IsCrashed || input.ResetBike))
         {
             CurrentState = State.Idle;
             return;
