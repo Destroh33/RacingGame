@@ -71,6 +71,8 @@ public class MotorcyclePhysics : MonoBehaviour
     Quaternion resetRotation;
     Vector3 frontGroundNormal = Vector3.up;
     Vector3 rearGroundNormal  = Vector3.up;
+    bool frontIsGrounded;
+    bool rearIsGrounded;
     Vector3    savedCoM;
     Vector3    savedInertia;
     Quaternion savedInertiaRot;
@@ -151,9 +153,9 @@ public class MotorcyclePhysics : MonoBehaviour
 
     void SuspensionAndGround()
     {
-        bool frontHit = SuspensionRay(frontWheelPos, ref prevFrontCompression, out debugFrontCompression, out debugFrontForce, out frontGroundNormal);
-        bool rearHit  = SuspensionRay(rearWheelPos,  ref prevRearCompression,  out debugRearCompression,  out debugRearForce,  out rearGroundNormal);
-        IsGrounded = frontHit || rearHit;
+        frontIsGrounded = SuspensionRay(frontWheelPos, ref prevFrontCompression, out debugFrontCompression, out debugFrontForce, out frontGroundNormal);
+        rearIsGrounded  = SuspensionRay(rearWheelPos,  ref prevRearCompression,  out debugRearCompression,  out debugRearForce,  out rearGroundNormal);
+        IsGrounded = frontIsGrounded || rearIsGrounded;
     }
 
     bool SuspensionRay(Transform origin, ref float prevCompression, out float outCompression, out float outForce, out Vector3 outNormal)
@@ -279,14 +281,21 @@ public class MotorcyclePhysics : MonoBehaviour
         float targetPitch = 0f;
         if (IsGrounded)
         {
-            // Average front/rear normals to get slope angle
-            Vector3 avgNormal = (frontGroundNormal + rearGroundNormal).normalized;
-            // Project onto forward axis to get pitch angle
+            // Only average normals from wheels that are actually on the ground
+            // Avoids half-angle on ramps when one wheel is still on flat terrain
+            Vector3 avgNormal;
+            if (frontIsGrounded && rearIsGrounded)
+                avgNormal = (frontGroundNormal + rearGroundNormal).normalized;
+            else if (frontIsGrounded)
+                avgNormal = frontGroundNormal;
+            else
+                avgNormal = rearGroundNormal;
+
             targetPitch = Vector3.SignedAngle(Vector3.up, avgNormal, transform.right);
         }
 
         // In air lerp slowly back to level; on ground snap to slope
-        float pitchLerpSpeed = IsGrounded ? 15f : 3f;
+        float pitchLerpSpeed = IsGrounded ? 25f : 3f;
         currentVisualPitch = Mathf.Lerp(currentVisualPitch, targetPitch, pitchLerpSpeed * Time.fixedDeltaTime);
 
         bikeModel.localRotation = Quaternion.Euler(currentVisualPitch, 0f, -CurrentLean);
