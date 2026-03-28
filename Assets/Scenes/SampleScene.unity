@@ -4108,8 +4108,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 0.4188765, y: 0.44224548, z: 2.0953429}
-  m_Center: {x: 0.0054174066, y: 0.9999542, z: -0.7518544}
+  m_Size: {x: 0.4188765, y: 0.3, z: 2.0953429}
+  m_Center: {x: 0.0054174066, y: 0.9, z: -0.7518544}
 --- !u!1 &377744800
 GameObject:
   m_ObjectHideFlags: 0
@@ -26001,7 +26001,7 @@ MonoBehaviour:
   steeringDamping: 4
   yawCounterStrength: 10
   suspensionRestLength: 0.4
-  suspensionTravel: 0.2
+  suspensionTravel: 0.3
   springStrength: 20000
   dampStrength: 2000
   wheelRadius: 0
