@@ -56,6 +56,7 @@ public class MotorcyclePhysics : MonoBehaviour
 
     // --- Public state read by camera / visuals / IK ---
     public float CurrentLean    { get; private set; }
+    public float CurrentPitch   { get; private set; }
     public float CurrentSpeed   { get; private set; }
     public bool  IsGrounded     { get; private set; }
     public bool  IsSliding      { get; private set; }
@@ -298,6 +299,7 @@ public class MotorcyclePhysics : MonoBehaviour
         // In air lerp slowly back to level; on ground snap to slope
         float pitchLerpSpeed = IsGrounded ? 25f : 3f;
         currentVisualPitch = Mathf.Lerp(currentVisualPitch, targetPitch, pitchLerpSpeed * Time.fixedDeltaTime);
+        CurrentPitch = currentVisualPitch;
 
         bikeModel.localRotation = Quaternion.Euler(currentVisualPitch, 0f, -CurrentLean);
     }

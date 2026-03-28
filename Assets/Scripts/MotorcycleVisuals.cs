@@ -68,8 +68,12 @@ public class MotorcycleVisuals : MonoBehaviour
     void SetParticles(ParticleSystem ps, bool active)
     {
         if (ps == null) return;
-        if (active && !ps.isPlaying)  ps.Play();
-        if (!active && ps.isPlaying)  ps.Stop();
+        if (active)
+        {
+           ps.Stop();
+           ps.Play();   
+        }
+        if (!active)  ps.Stop();
     }
 
     void HandleSkidMarks()
