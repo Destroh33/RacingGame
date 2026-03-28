@@ -82,6 +82,7 @@ public class MotorcyclePhysics : MonoBehaviour
     float debugFrontCompression, debugFrontForce;
     float debugRearCompression,  debugRearForce;
 
+    [SerializeField] GameObject minimapCam;
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -370,6 +371,8 @@ public class MotorcyclePhysics : MonoBehaviour
         rb.automaticCenterOfMass  = true;
         rb.automaticInertiaTensor = true;
         OnCrash?.Invoke(impactVelocity);
+        if (minimapCam != null) minimapCam.transform.SetParent(null);
+
     }
 
     Vector3 finishTarget;
