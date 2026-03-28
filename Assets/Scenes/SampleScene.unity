@@ -26001,9 +26001,9 @@ MonoBehaviour:
   steeringDamping: 4
   yawCounterStrength: 10
   suspensionRestLength: 0.4
-  suspensionTravel: 0.3
-  springStrength: 20000
-  dampStrength: 2000
+  suspensionTravel: 0.4
+  springStrength: 22000
+  dampStrength: 2200
   wheelRadius: 0
   groundMask:
     serializedVersion: 2
