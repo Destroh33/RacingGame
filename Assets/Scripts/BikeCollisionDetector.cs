@@ -19,6 +19,8 @@ public class BikeCollisionDetector : MonoBehaviour
     public float     minCrashVolume = 0.15f;
     public float     maxCrashVolume = 1.0f;
     public float     crashCooldown  = 0.12f;
+    public float     audioMinDistance = 15f;
+    public float     audioMaxDistance = 150f;
 
     // Tracks cooldown per-contact point so large hitboxes don't suppress
     // sounds from genuinely separate collision events happening at the same time
@@ -32,7 +34,10 @@ public class BikeCollisionDetector : MonoBehaviour
         audioSource              = GetComponent<AudioSource>();
         audioSource.loop         = false;
         audioSource.playOnAwake  = false;
-        audioSource.spatialBlend = 0f;
+        audioSource.spatialBlend = 1f;
+        audioSource.rolloffMode  = AudioRolloffMode.Logarithmic;
+        audioSource.minDistance  = audioMinDistance;
+        audioSource.maxDistance  = audioMaxDistance;
         audioSource.priority     = 0;
     }
 
@@ -116,7 +121,10 @@ public class BikeCollisionDetector : MonoBehaviour
         src.clip         = crashClip;
         src.volume       = volume;
         src.pitch        = pitch;
-        src.spatialBlend = 0f;
+        src.spatialBlend = 1f;
+        src.rolloffMode  = AudioRolloffMode.Logarithmic;
+        src.minDistance  = audioMinDistance;
+        src.maxDistance  = audioMaxDistance;
         src.priority     = 0;
         src.Play();
         Destroy(go, crashClip.length + 0.1f);

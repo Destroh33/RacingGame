@@ -27518,6 +27518,8 @@ MonoBehaviour:
   minCrashVolume: 0.5
   maxCrashVolume: 0.8
   crashCooldown: 0.05
+  audioMinDistance: 15
+  audioMaxDistance: 150
 --- !u!1 &47300063578563445
 GameObject:
   m_ObjectHideFlags: 0
@@ -28001,10 +28003,10 @@ MonoBehaviour:
   windMaxVolume: 0.5
   maxSpeed: 40
   minPitch: 0.4
-  maxPitch: 1.6
+  maxPitch: 1.8
   pitchSmooth: 6
-  minVolume: 0.7
-  maxVolume: 1
+  minVolume: 0.6
+  maxVolume: 0.8
   volumeSmooth: 6
   engineFadeDuration: 0.8
 --- !u!82 &919132147939319866
@@ -28031,7 +28033,7 @@ AudioSource:
   MinDistance: 1
   MaxDistance: 500
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 1
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
