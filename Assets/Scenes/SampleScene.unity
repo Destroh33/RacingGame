@@ -4167,9 +4167,9 @@ MonoBehaviour:
   maxSpeedPullback: 3
   maxSpeed: 80
   cameraLeanFactor: 0.3
-  shakeAmplitude: 0.02
-  shakeFrequency: 50
-  shakeMinSpeed: 30
+  shakeAmplitude: 0.005
+  shakeFrequency: 20
+  shakeMinSpeed: 20
   shakeMaxSpeed: 40
   postProcessVolume: {fileID: 1378555225}
   fovBase: 60
@@ -27494,6 +27494,7 @@ MonoBehaviour:
   speedTrail: {fileID: 664363234}
   speedTrailMinSpeed: 30
   speedTrailMaxSpeed: 40
+  smokeBurstRate: 24
   crashParticles: {fileID: 104829970813648393, guid: d3015b7eea383f64d8b81f965cc466e7, type: 3}
 --- !u!114 &2141035890
 MonoBehaviour:

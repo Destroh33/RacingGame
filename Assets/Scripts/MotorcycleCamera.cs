@@ -52,7 +52,6 @@ public class MotorcycleCamera : MonoBehaviour
     Vector3 smoothedTargetPos;
     Vector3 crashCameraTarget;
     Vector3 shakeOffset;
-    float   shakeOffsetTimer;
     float   speedFxT;
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -169,20 +168,17 @@ public class MotorcycleCamera : MonoBehaviour
         float shakeT = Mathf.InverseLerp(shakeMinSpeed, shakeMaxSpeed, speed);
         if (shakeT > 0f)
         {
-            shakeOffsetTimer += Time.deltaTime * shakeFrequency;
-            if (shakeOffsetTimer >= 1f)
-            {
-                shakeOffsetTimer = 0f;
-                shakeOffset      = Random.insideUnitSphere * shakeAmplitude * shakeT;
-                shakeOffset.z    = 0f;
-            }
+            float t = Time.time * shakeFrequency;
+            shakeOffset = new Vector3(
+                (Mathf.PerlinNoise(t, 0f)        - 0.5f) * 2f,
+                (Mathf.PerlinNoise(0f, t)        - 0.5f) * 2f,
+                0f
+            ) * shakeAmplitude * shakeT;
         }
         else
         {
-            shakeOffset      = Vector3.zero;
-            shakeOffsetTimer = 0f;
+            shakeOffset = Vector3.zero;
         }
-        shakeOffset        = Vector3.Lerp(shakeOffset, Vector3.zero, shakeFrequency * Time.deltaTime);
         transform.position += transform.TransformDirection(shakeOffset);
 
         // FOV / post fx

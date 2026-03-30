@@ -28,7 +28,11 @@ public class MotorcycleVisuals : MonoBehaviour
     float frontWheelRot;
     float rearWheelRot;
 
-    bool cachedCrash = false;
+    [Header("Smoke Burst Rate")]
+    public float smokeBurstRate = 24f; // bursts per second
+
+    bool  cachedCrash    = false;
+    float smokeBurstTimer = 0f;
     public GameObject crashParticles;
     void Update()
     {
@@ -61,17 +65,22 @@ public class MotorcycleVisuals : MonoBehaviour
             Instantiate(crashParticles, this.gameObject.transform.position, this.gameObject.transform.rotation);
         cachedCrash = physics.IsCrashed;
         bool skidding = !physics.IsCrashed && physics.IsSliding && physics.IsGrounded;
-        SetParticles(rearTireSmoke,  skidding);
-        SetParticles(frontTireSmoke, skidding);
+
+        smokeBurstTimer += Time.deltaTime;
+        bool burst = smokeBurstTimer >= 1f / smokeBurstRate;
+        if (burst) smokeBurstTimer -= 1f / smokeBurstRate;
+
+        SetParticles(rearTireSmoke,  skidding, burst);
+        SetParticles(frontTireSmoke, skidding, burst);
     }
 
-    void SetParticles(ParticleSystem ps, bool active)
+    void SetParticles(ParticleSystem ps, bool active, bool burst)
     {
         if (ps == null) return;
-        if (active)
+        if (active && burst)
         {
            ps.Stop();
-           ps.Play();   
+           ps.Play();
         }
         if (!active)  ps.Stop();
     }
