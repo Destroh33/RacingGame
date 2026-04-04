@@ -111,7 +111,7 @@ public class MainMenuManager : MonoBehaviour
 
     IEnumerator FetchLeaderboard()
     {
-        if (leaderboardText) leaderboardText.text = "Loading...";
+        if (leaderboardText) leaderboardText.text = BuildLoadingTable();
 
         string url = $"{supabaseUrl}/rest/v1/{TABLE}?select=username,time_ms&order=time_ms.asc&limit=10";
         using (var req = UnityWebRequest.Get(url))
@@ -128,25 +128,82 @@ public class MainMenuManager : MonoBehaviour
             var entries = ParseEntries(req.downloadHandler.text);
             if (leaderboardText)
             {
-                if (entries.Count == 0)
-                {
-                    leaderboardText.text = "No times yet!";
-                }
-                else
-                {
-                    var sb = new StringBuilder();
-                    for (int i = 0; i < entries.Count; i++)
-                    {
-                        string rank     = $"#{i + 1}".PadRight(4);
-                        string name     = entries[i].username.PadRight(16);
-                        float  secs     = entries[i].time_ms / 1000f;
-                        string time     = LapTimer.FormatTime(secs);
-                        sb.AppendLine($"{rank}{name}{time}");
-                    }
-                    leaderboardText.text = sb.ToString().TrimEnd();
-                }
+                leaderboardText.text = entries.Count == 0
+                    ? "No times yet!"
+                    : BuildTable(entries);
             }
         }
+    }
+
+    static string BuildLoadingTable()
+    {
+        const string Y  = "<color=#FFD700>";
+        const string W  = "<color=#FFFFFF>";
+        const string E  = "</color>";
+        const int RankW = 5;
+        const int NameW = 17;
+        const int TimeW = 10;
+
+        string Pad(string s, int w) { s = " " + s + " "; return s.Length > w ? s.Substring(0, w) : s.PadRight(w); }
+
+        string sep     = $"{Y}+{new string('-', RankW)}+{new string('-', NameW)}+{new string('-', TimeW)}+{E}";
+        string MakeRow(string rank, string name, string time) =>
+            $"{Y}|{W}{Pad(rank, RankW)}{Y}|{W}{Pad(name, NameW)}{Y}|{W}{Pad(time, TimeW)}{Y}|{E}";
+
+        var sb = new StringBuilder();
+        sb.AppendLine(sep);
+        sb.AppendLine(MakeRow("#", "PLAYER", "TIME"));
+        sb.AppendLine(sep);
+        for (int i = 0; i < 10; i++)
+            sb.AppendLine(MakeRow($"#{i + 1}", "...", "..."));
+        sb.AppendLine(sep);
+        return sb.ToString().TrimEnd();
+    }
+
+    static string BuildTable(List<LeaderboardEntry> entries)
+    {
+        const string Y  = "<color=#FFD700>";
+        const string W  = "<color=#FFFFFF>";
+        const string E  = "</color>";
+
+        // Column inner widths in characters (excluding pipes)
+        const int RankW = 5;   //  " #10 "
+        const int NameW = 17;  //  " username        "
+        const int TimeW = 10;  //  " 0:47.101 "
+
+        string Pad(string s, int w)
+        {
+            s = " " + s + " ";
+            if (s.Length > w) s = s.Substring(0, w);
+            return s.PadRight(w);
+        }
+
+        string TruncateName(string n)
+        {
+            if (n.Length > 15) n = n.Substring(0, 12) + "...";
+            return n;
+        }
+
+        string sep     = $"{Y}+{new string('-', RankW)}+{new string('-', NameW)}+{new string('-', TimeW)}+{E}";
+        string MakeRow(string rank, string name, string time) =>
+            $"{Y}|{W}{Pad(rank, RankW)}{Y}|{W}{Pad(name, NameW)}{Y}|{W}{Pad(time, TimeW)}{Y}|{E}";
+
+        var sb = new StringBuilder();
+        sb.AppendLine(sep);
+        sb.AppendLine(MakeRow("#", "PLAYER", "TIME"));
+        sb.AppendLine(sep);
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            string rank = $"#{i + 1}";
+            string name = TruncateName(entries[i].username);
+            float  secs = entries[i].time_ms / 1000f;
+            string time = LapTimer.FormatTime(secs);
+            sb.AppendLine(MakeRow(rank, name, time));
+        }
+
+        sb.AppendLine(sep);
+        return sb.ToString().TrimEnd();
     }
 
     List<LeaderboardEntry> ParseEntries(string json)
