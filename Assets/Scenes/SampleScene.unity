@@ -11870,12 +11870,12 @@ MonoBehaviour:
   fovSmooth: 4
   maxMotionBlur: 0.5
   vignetteBase: 0.1
-  vignetteMax: 0.3
+  vignetteMax: 0.35
   speedFxMin: 30
   speedFxMax: 40
   crashRiseHeight: 6
   crashRiseSpeed: 2
-  crashVignetteTarget: 0.4
+  crashVignetteTarget: 0.45
   crashVignetteSpeed: 3
 --- !u!1 &332315045
 GameObject:
