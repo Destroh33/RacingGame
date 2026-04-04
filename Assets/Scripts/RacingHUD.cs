@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -22,6 +23,10 @@ public class RacingHUD : MonoBehaviour
     public GameObject      finishPanel;
     public TextMeshProUGUI finishTimeText;
     public TextMeshProUGUI finishDeltaText;
+    [SerializeField] LeaderboardManager leaderboardManager;
+    [SerializeField] AudioSource        slamSource;
+    [SerializeField] float              finishDelay   = 0f;
+    [SerializeField] float              lineSlamDelay = 0.15f;
 
     // Per-sector cache — captured when event fires, before bests update
     readonly float[] cachedSplits      = new float[3];
@@ -128,7 +133,6 @@ public class RacingHUD : MonoBehaviour
             bool isActive = lapTimer.CurrentState == LapTimer.State.Running && s == lapTimer.NextSector;
             if (isActive)
             {
-                // Currently racing this sector — yellow
                 string timeStr = lapTimer.BestSplitsSet[s]
                     ? LapTimer.FormatTime(lapTimer.BestSplits[s])
                     : "--:--.---";
@@ -149,7 +153,6 @@ public class RacingHUD : MonoBehaviour
 
     void HandleSectorComplete(int sector, float split, float delta)
     {
-        // Capture before LapTimer updates bests
         cachedSplits[sector]      = split;
         cachedDeltas[sector]      = delta;
         sectorCrossed[sector]     = true;
@@ -162,29 +165,46 @@ public class RacingHUD : MonoBehaviour
     void ShowFinishScreen(float split, float delta)
     {
         if (finishPanel == null) return;
-
         finishPanel.SetActive(true);
 
-        // Top: previous best (bests haven't updated yet when this fires)
-        if (finishTimeText != null)
+        if (finishTimeText)  finishTimeText.text  = "";
+        if (finishDeltaText) finishDeltaText.text = "";
+
+        string oldBestRich = lapTimer.BestSplitsSet[2]
+            ? $"Old Best:  {LapTimer.FormatTime(lapTimer.BestSplits[2])}"
+            : "Old Best:  --:--.---";
+
+        string thisRunRich;
+        if (lapTimer.BestSplitsSet[2])
         {
-            finishTimeText.text = lapTimer.BestSplitsSet[2]
-                ? $"Old Best:  {LapTimer.FormatTime(lapTimer.BestSplits[2])}"
-                : "Old Best:  --:--.---";
+            string col = delta <= 0f ? Green : Red;
+            thisRunRich = $"This Run:  <color={col}>{LapTimer.FormatTime(split)}</color>";
+        }
+        else
+        {
+            thisRunRich = $"This Run:  {LapTimer.FormatTime(split)}";
         }
 
-        // Bottom: this run's time colored green/red if there was a previous best
-        if (finishDeltaText != null)
-        {
-            if (lapTimer.BestSplitsSet[2])
-            {
-                string col           = delta <= 0f ? Green : Red;
-                finishDeltaText.text = $"This Run:  <color={col}>{LapTimer.FormatTime(split)}</color>";
-            }
-            else
-            {
-                finishDeltaText.text = $"This Run:  {LapTimer.FormatTime(split)}";
-            }
-        }
+        StartCoroutine(RunFinishSequence(oldBestRich, thisRunRich));
+    }
+
+    IEnumerator RunFinishSequence(string oldBestRich, string thisRunRich)
+    {
+        if (finishDelay > 0f) yield return new WaitForSeconds(finishDelay);
+
+        if (finishTimeText) finishTimeText.text = oldBestRich;
+        PlaySlam();
+        yield return new WaitForSeconds(lineSlamDelay);
+
+        if (finishDeltaText) finishDeltaText.text = thisRunRich;
+        PlaySlam();
+        yield return new WaitForSeconds(lineSlamDelay);
+
+        leaderboardManager?.SignalUIReady();
+    }
+
+    void PlaySlam()
+    {
+        if (slamSource != null) slamSource.Play();
     }
 }
