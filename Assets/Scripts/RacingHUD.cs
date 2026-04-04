@@ -28,6 +28,10 @@ public class RacingHUD : MonoBehaviour
     [SerializeField] float              finishDelay   = 0f;
     [SerializeField] float              lineSlamDelay = 0.15f;
 
+    [Header("Restart Prompt")]
+    [SerializeField] TextMeshProUGUI restartText;
+    [SerializeField] float           restartFadeSpeed = 1.5f;
+
     // Per-sector cache — captured when event fires, before bests update
     readonly float[] cachedSplits      = new float[3];
     readonly float[] cachedDeltas      = new float[3];
@@ -35,6 +39,8 @@ public class RacingHUD : MonoBehaviour
     readonly bool[]  sectorHadPrevBest = new bool[3];
 
     LapTimer.State prevLapState;
+    bool           crashPromptShown;
+    Coroutine      restartPulse;
 
     static readonly string Green = "#00DD66";
     static readonly string Red   = "#FF3333";
@@ -45,6 +51,8 @@ public class RacingHUD : MonoBehaviour
             lapTimer.OnSectorComplete += HandleSectorComplete;
         if (finishPanel != null)
             finishPanel.SetActive(false);
+        if (restartText != null)
+            SetRestartAlpha(0f);
     }
 
     void OnDisable()
@@ -57,14 +65,27 @@ public class RacingHUD : MonoBehaviour
     {
         if (lapTimer == null) return;
 
-        // New run started — clear cached sector data
+        bool wasRunning = prevLapState == LapTimer.State.Running;
+        bool nowIdle    = lapTimer.CurrentState == LapTimer.State.Idle;
+
+        // New run started — clear cached sector data and hide restart prompt
         if (lapTimer.CurrentState == LapTimer.State.Running && prevLapState == LapTimer.State.Idle)
         {
             System.Array.Clear(sectorCrossed,     0, 3);
             System.Array.Clear(cachedSplits,      0, 3);
             System.Array.Clear(cachedDeltas,      0, 3);
             System.Array.Clear(sectorHadPrevBest, 0, 3);
+            crashPromptShown = false;
+            HideRestartPrompt();
         }
+
+        // Crash — show restart prompt immediately
+        if (wasRunning && nowIdle && physics != null && physics.IsCrashed && !crashPromptShown)
+        {
+            crashPromptShown = true;
+            ShowRestartPrompt();
+        }
+
         prevLapState = lapTimer.CurrentState;
 
         UpdateSpeed();
@@ -201,6 +222,59 @@ public class RacingHUD : MonoBehaviour
         yield return new WaitForSeconds(lineSlamDelay);
 
         leaderboardManager?.SignalUIReady();
+    }
+
+    // Called by LeaderboardManager after rank is displayed
+    public void ShowRestartPrompt()
+    {
+        if (restartText == null) return;
+        if (restartPulse != null) StopCoroutine(restartPulse);
+        restartPulse = StartCoroutine(PulseRestart());
+    }
+
+    void HideRestartPrompt()
+    {
+        if (restartPulse != null) { StopCoroutine(restartPulse); restartPulse = null; }
+        SetRestartAlpha(0f);
+    }
+
+    IEnumerator PulseRestart()
+    {
+        // Fade in
+        float alpha = 0f;
+        while (alpha < 1f)
+        {
+            alpha = Mathf.MoveTowards(alpha, 1f, restartFadeSpeed * Time.deltaTime);
+            SetRestartAlpha(alpha);
+            yield return null;
+        }
+
+        // Pulse in/out indefinitely
+        while (true)
+        {
+            alpha = Mathf.MoveTowards(alpha, 0f, restartFadeSpeed * Time.deltaTime);
+            SetRestartAlpha(alpha);
+            if (alpha <= 0f)
+            {
+                yield return new WaitForSeconds(0.1f);
+                while (alpha < 1f)
+                {
+                    alpha = Mathf.MoveTowards(alpha, 1f, restartFadeSpeed * Time.deltaTime);
+                    SetRestartAlpha(alpha);
+                    yield return null;
+                }
+                yield return new WaitForSeconds(0.1f);
+            }
+            yield return null;
+        }
+    }
+
+    void SetRestartAlpha(float alpha)
+    {
+        if (restartText == null) return;
+        Color c = restartText.color;
+        c.a = alpha;
+        restartText.color = c;
     }
 
     void PlaySlam()

@@ -14,6 +14,7 @@ public class LeaderboardManager : MonoBehaviour
     [SerializeField] LapTimer lapTimer;
     [SerializeField] TextMeshProUGUI rankText;
     [SerializeField] AudioSource slamSource;
+    [SerializeField] RacingHUD racingHUD;
 
     const string TABLE          = "leaderboard";
     const string PREF_PLAYER_ID = "lb_player_id";
@@ -132,6 +133,8 @@ public class LeaderboardManager : MonoBehaviour
             rankText.text = prefix + fetchedRank;
         else
             rankText.text = "Rank unavailable";
+
+        if (racingHUD != null) racingHUD.ShowRestartPrompt();
     }
 
     void SetHeaders(UnityWebRequest req)
