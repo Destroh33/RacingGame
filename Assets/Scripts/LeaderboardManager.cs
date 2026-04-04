@@ -18,6 +18,7 @@ public class LeaderboardManager : MonoBehaviour
 
     const string TABLE          = "leaderboard";
     const string PREF_PLAYER_ID = "lb_player_id";
+    const string PREF_USERNAME  = "lb_username";
     const string ScrambleDigits = "0123456789";
     const float  ChangeInterval = 0.04f;
     const float  MinScramble    = 0.15f;
@@ -54,7 +55,8 @@ public class LeaderboardManager : MonoBehaviour
         fetchedRank = 0;
         if (rankText) rankText.text = "";
 
-        string json = $"{{\"player_id\":\"{playerId}\",\"time_ms\":{timeMs}}}";
+        string username = PlayerPrefs.GetString(PREF_USERNAME, "destroh3");
+        string json = $"{{\"player_id\":\"{playerId}\",\"time_ms\":{timeMs},\"username\":\"{username}\"}}";
         using (var req = new UnityWebRequest($"{supabaseUrl}/rest/v1/{TABLE}", "POST"))
         {
             req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));

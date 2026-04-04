@@ -32,6 +32,9 @@ public class RacingHUD : MonoBehaviour
     [SerializeField] TextMeshProUGUI restartText;
     [SerializeField] float           restartFadeSpeed = 1.5f;
 
+    [Header("Player")]
+    [SerializeField] TextMeshProUGUI usernameText;
+
     // Per-sector cache — captured when event fires, before bests update
     readonly float[] cachedSplits      = new float[3];
     readonly float[] cachedDeltas      = new float[3];
@@ -53,6 +56,9 @@ public class RacingHUD : MonoBehaviour
             finishPanel.SetActive(false);
         if (restartText != null)
             SetRestartAlpha(0f);
+
+        if (usernameText != null)
+            usernameText.text = PlayerPrefs.GetString("lb_username", "destroh3");
     }
 
     void OnDisable()
