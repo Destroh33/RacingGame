@@ -58,7 +58,7 @@ public class MainMenuManager : MonoBehaviour
     {
         playButton.interactable = false;
 
-        string input = usernameInput.text.Trim();
+        string input = SanitizeUsername(usernameInput.text);
         if (string.IsNullOrEmpty(input))
         {
             string guest = "";
@@ -69,6 +69,23 @@ public class MainMenuManager : MonoBehaviour
         PlayerPrefs.SetString(PREF_USERNAME, input);
         PlayerPrefs.Save();
         SceneManager.LoadScene(gameSceneName);
+    }
+
+    static string SanitizeUsername(string raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return "";
+
+        var sb = new StringBuilder();
+        foreach (char c in raw)
+        {
+            // Allow letters, digits, underscores, hyphens only
+            if (char.IsLetterOrDigit(c) || c == '_' || c == '-')
+                sb.Append(c);
+        }
+
+        string result = sb.ToString().Trim();
+        if (result.Length > 15) result = result.Substring(0, 15);
+        return result;
     }
 
     IEnumerator GenerateGuestUsername(System.Action<string> callback)

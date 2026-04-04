@@ -562,7 +562,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
-  m_Volume: 0.3
+  m_Volume: 0.1
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -710,7 +710,7 @@ MonoBehaviour:
   leaderboardText: {fileID: 1362112585}
   gameSceneName: SampleScene
   musicClip: {fileID: 8300000, guid: 1ff0838ee91207842a6f7a4bb111ca27, type: 3}
-  musicVolume: 0.3
+  musicVolume: 0.1
 --- !u!4 &823999227
 Transform:
   m_ObjectHideFlags: 0
@@ -1366,7 +1366,7 @@ MonoBehaviour:
   m_CharacterValidation: 0
   m_RegexValue: 
   m_GlobalPointSize: 14
-  m_CharacterLimit: 0
+  m_CharacterLimit: 15
   m_OnEndEdit:
     m_PersistentCalls:
       m_Calls: []
