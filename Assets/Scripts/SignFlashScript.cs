@@ -16,31 +16,23 @@ public class SignFlashScript : MonoBehaviour
 
     IEnumerator FlashRoutine(int index)
     {
-        GameObject prev;
-        GameObject curr;
-        if (index+1 < flashObjContainers.Count)
+        while (true)
         {
-            prev = flashObjContainers[index];
-            curr = flashObjContainers[index+1];
-            index++;
+            int prevIndex = index;
+            int nextIndex = (index + 1) % flashObjContainers.Count;
+
+            foreach (MeshRenderer mr in flashObjContainers[prevIndex].GetComponentsInChildren<MeshRenderer>())
+            {
+                mr.material = dullMat;
+            }
+            foreach (MeshRenderer mr in flashObjContainers[nextIndex].GetComponentsInChildren<MeshRenderer>())
+            {
+                mr.material = flashMat;
+            }
+
+            index = nextIndex;
+            yield return new WaitForSeconds(flashDelay);
         }
-        else
-        {
-            prev = flashObjContainers[flashObjContainers.Count-1];
-            curr = flashObjContainers[0];
-            index = 0;
-        }
-        foreach(MeshRenderer mr in prev.GetComponentsInChildren<MeshRenderer>())
-        {
-            mr.material = dullMat;
-        }
-        foreach(MeshRenderer mr in curr.GetComponentsInChildren<MeshRenderer>())
-        {
-            mr.material = flashMat;
-        }
-        index++;
-        
-        yield return new WaitForSeconds(flashDelay);
     }
 
     // Update is called once per frame
